@@ -24,6 +24,8 @@ test_lib = []
 # Template dependencies
 chrono = { version = "0.4.38", optional = true }
 dhat = { version = "0.3.3", optional = true }
+pest = "2.7.14"
+pest_derive = "2.7.14"
 pico-args = "0.5.0"
 tinyjson = "2.5.1"
 

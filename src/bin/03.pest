@@ -1,0 +1,10 @@
+
+num = @{ ASCII_DIGIT+ }
+mul = ${ "mul(" ~ num ~ "," ~ num ~ ")" }
+do = { "do()" }
+dont = { "don't()"}
+
+garbage = _{ ASCII }
+
+muls = { (mul | garbage)+ }
+muls_stateful = { (do | dont | mul | garbage)+ }
