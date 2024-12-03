@@ -1,9 +1,15 @@
+// https://pest.rs/book/
 
+// @ means atomic rule with silent inner
+// atomic rule means we don't allow "implicit whitespace"
 num = @{ ASCII_DIGIT+ }
+
+// $ means atomic rule with accessible inner
 mul = ${ "mul(" ~ num ~ "," ~ num ~ ")" }
 do = { "do()" }
 dont = { "don't()"}
 
+// silent rule that does not produce pairs of <token, rule>
 garbage = _{ ASCII }
 
 muls = { (mul | garbage)+ }
