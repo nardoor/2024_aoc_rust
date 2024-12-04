@@ -13,7 +13,7 @@ pub fn part_one(input: &str) -> Option<u32> {
     };
 
     parse
-        .next() // because we have an `Pairs` iterator over `muls`, we take the first (and only one)
+        .next() // because we have a `Pairs` iterator over `muls`, we take the first (and only one)
         .unwrap()
         .into_inner() // into_inner means we take the list of `Pair` composing the `muls` which is composed of `(mul | garbage)+`
         .try_fold(0u32, |acc, pair| {
