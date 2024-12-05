@@ -1,5 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
-
+use std::collections::{HashMap, HashSet};
 advent_of_code::solution!(5);
 
 struct Rule {
@@ -17,19 +16,19 @@ impl From<&str> for Rule {
     }
 }
 
-struct RuleSet(BTreeMap<u32, BTreeSet<u32>>);
+struct RuleSet(HashMap<u32, HashSet<u32>>);
 
 impl From<Vec<Rule>> for RuleSet {
     fn from(rules: Vec<Rule>) -> Self {
-        let mut map = BTreeMap::new();
+        let mut map = HashMap::new();
 
         rules.into_iter().for_each(|rule| {
             map.entry(rule.before)
-                .and_modify(|set: &mut BTreeSet<u32>| {
+                .and_modify(|set: &mut HashSet<u32>| {
                     set.insert(rule.after);
                 })
                 .or_insert_with(|| {
-                    let mut set = BTreeSet::new();
+                    let mut set = HashSet::new();
                     set.insert(rule.after);
                     set
                 });
@@ -39,7 +38,7 @@ impl From<Vec<Rule>> for RuleSet {
 }
 
 impl RuleSet {
-    fn get_not_allowed_before(&self, val: u32) -> Option<&BTreeSet<u32>> {
+    fn get_not_allowed_before(&self, val: u32) -> Option<&HashSet<u32>> {
         self.0.get(&val)
     }
 }
@@ -54,35 +53,52 @@ impl From<&str> for Print {
 
 impl Print {
     fn is_valid(&self, rules: &RuleSet) -> bool {
-        self.get_first_invalid_index(rules).is_none()
+        self.get_first_invalid_index(rules, None).is_none()
     }
 
-    fn get_first_invalid_index(&self, rules: &RuleSet) -> Option<(usize, usize)> {
-        self.0.iter().enumerate().find_map(|(idx, v)| {
-            let before_slice = &self.0[..idx];
-            if let Some(not_allowed_before) = rules.get_not_allowed_before(*v) {
-                before_slice
-                    .into_iter()
-                    .enumerate()
-                    .find_map(|(not_allowed_idx, before)| {
-                        if not_allowed_before.contains(before) {
-                            Some((idx, not_allowed_idx))
-                        } else {
-                            None
-                        }
-                    })
-            } else {
-                None
-            }
-        })
+    fn get_first_invalid_index(
+        &self,
+        rules: &RuleSet,
+        start_index: Option<usize>,
+    ) -> Option<(usize, usize)> {
+        self.0
+            .iter()
+            .enumerate()
+            .skip(start_index.unwrap_or(0))
+            .find_map(|(idx, v)| {
+                let before_slice = &self.0[..idx];
+                if let Some(not_allowed_before) = rules.get_not_allowed_before(*v) {
+                    before_slice
+                        .into_iter()
+                        .enumerate()
+                        .find_map(|(not_allowed_idx, before)| {
+                            if not_allowed_before.contains(before) {
+                                Some((idx, not_allowed_idx))
+                            } else {
+                                None
+                            }
+                        })
+                } else {
+                    None
+                }
+            })
     }
 
     /// Returns `true` if needed reordering
     fn reorder(&mut self, rules: &RuleSet) -> bool {
         let mut updated = false;
-        while let Some((idx, invalid_index)) = self.get_first_invalid_index(rules) {
-            // Probably sub-optimal...
-            self.0.swap(invalid_index, idx);
+        let mut start_idx = 0;
+
+        // do some kind of ~`bubble sort`
+        while let Some((idx, invalid_index)) = self.get_first_invalid_index(rules, Some(start_idx))
+        {
+            let v = self.0.swap_remove(invalid_index);
+            self.0.insert(idx, v);
+            // self.0.swap(invalid_index, idx);
+            // do not re-check everything from start
+            // `invalid_index + 1` is the first index that could fail
+            // once we've swapped
+            start_idx = (invalid_index).min(self.0.len() - 1);
             updated = true;
         }
         return updated;
