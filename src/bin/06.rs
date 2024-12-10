@@ -1,6 +1,8 @@
-use std::cmp::Ordering;
 use std::collections::BTreeSet;
-use std::{collections::HashSet, ops::Add};
+use std::collections::HashSet;
+
+use advent_of_code::Bound;
+use advent_of_code::{Dir, Pos};
 
 advent_of_code::solution!(6);
 
@@ -21,17 +23,13 @@ impl TryFrom<char> for MapTile {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum Dir {
-    Up,
-    Right,
-    Down,
-    Left,
+trait FromChar {
+    fn from_char(c: char) -> Self;
 }
 
-impl From<char> for Dir {
-    fn from(value: char) -> Self {
-        match value {
+impl FromChar for Dir {
+    fn from_char(c: char) -> Self {
+        match c {
             '^' => Self::Up,
             '>' => Self::Right,
             'v' => Self::Down,
@@ -41,69 +39,12 @@ impl From<char> for Dir {
     }
 }
 
-impl Dir {
-    fn rotate_right(self) -> Self {
-        match self {
-            Self::Up => Self::Right,
-            Self::Right => Self::Down,
-            Self::Down => Self::Left,
-            Self::Left => Self::Up,
-        }
-    }
-    fn all() -> [Self; 4] {
-        [Self::Up, Self::Right, Self::Down, Self::Left]
-    }
-    fn opposite(self) -> Self {
-        match self {
-            Self::Up => Self::Down,
-            Self::Right => Self::Left,
-            Self::Down => Self::Up,
-            Self::Left => Self::Right,
-        }
-    }
-    fn aligned(self, pos1: BoundedPos, pos2: BoundedPos) -> bool {
-        match self {
-            Self::Up => pos1.x == pos2.x,
-            Self::Right => pos1.y == pos2.y,
-            Self::Down => pos1.x == pos2.x,
-            Self::Left => pos1.y == pos2.y,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct BoundedPos {
-    x: usize,
-    y: usize,
-    // first x value to be invalid
-    x_bound: usize,
-    // first y value to be invalid
-    y_bound: usize,
-}
-
-impl PartialOrd for BoundedPos {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        assert!(self.x_bound == other.x_bound);
-        assert!(self.y_bound == other.y_bound);
-
-        match self.y.partial_cmp(&other.y) {
-            Some(Ordering::Equal) => self.x.partial_cmp(&other.x),
-            ord => ord,
-        }
-    }
-}
-
-impl Ord for BoundedPos {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
-    }
-}
-
 #[derive(Debug)]
 struct Puzzle {
-    guard_pos: BoundedPos,
+    guard_pos: Pos,
     guard_dir: Dir,
     map: Vec<Vec<MapTile>>,
+    bound: Bound,
 }
 
 impl From<&str> for Puzzle {
@@ -120,7 +61,7 @@ impl From<&str> for Puzzle {
                         Ok(t) => t,
                         Err(c) => {
                             guard_pos = Some((x, y));
-                            guard_dir = Some(Dir::from(c));
+                            guard_dir = Some(Dir::from_char(c));
                             MapTile::Empty
                         }
                     })
@@ -131,57 +72,26 @@ impl From<&str> for Puzzle {
         let y_bound = map.len();
         let x_bound = map[0].len();
         let Some((x, y)) = guard_pos else { panic!() };
-        let guard_pos = BoundedPos {
-            x,
-            y,
-            x_bound,
-            y_bound,
-        };
+        let guard_pos = Pos { x, y };
+        let bound = Bound { x_bound, y_bound };
         Self {
             guard_dir: guard_dir.unwrap(),
-            guard_pos: guard_pos,
+            guard_pos,
             map,
+            bound,
         }
-    }
-}
-
-impl Add<Dir> for BoundedPos {
-    type Output = Option<Self>;
-    fn add(mut self, rhs: Dir) -> Self::Output {
-        let potential_pos = match rhs {
-            Dir::Up => (
-                self.x.checked_add_signed(0)?,
-                self.y.checked_add_signed(-1)?,
-            ),
-            Dir::Right => (self.x.checked_add_signed(1)?, self.y.checked_add_signed(0)?),
-            Dir::Down => (self.x.checked_add_signed(0)?, self.y.checked_add_signed(1)?),
-            Dir::Left => (
-                self.x.checked_add_signed(-1)?,
-                self.y.checked_add_signed(0)?,
-            ),
-        };
-
-        if potential_pos.0 >= self.x_bound {
-            return None;
-        }
-        if potential_pos.1 >= self.y_bound {
-            return None;
-        }
-        self.x = potential_pos.0;
-        self.y = potential_pos.1;
-        Some(self)
     }
 }
 
 impl Puzzle {
-    fn get(&self, pos: BoundedPos) -> MapTile {
+    fn get(&self, pos: Pos) -> MapTile {
         self.map[pos.y][pos.x]
     }
-    fn get_mut(&mut self, pos: BoundedPos) -> &mut MapTile {
+    fn get_mut(&mut self, pos: Pos) -> &mut MapTile {
         &mut self.map[pos.y][pos.x]
     }
-    fn next_pos_dir(&self, pos: BoundedPos, dir: Dir) -> Option<(BoundedPos, Dir)> {
-        let Some(new_pos) = pos + dir else {
+    fn next_pos_dir(&self, pos: Pos, dir: Dir) -> Option<(Pos, Dir)> {
+        let Some(new_pos) = dir.apply_bounded(&pos, &self.bound) else {
             // pos got out of bound
             return None;
         };
@@ -202,11 +112,11 @@ impl Puzzle {
         self.path_until_out()
             .into_iter()
             .map(|(p, _d)| p)
-            .collect::<BTreeSet<BoundedPos>>()
+            .collect::<BTreeSet<Pos>>()
             .len()
     }
 
-    fn path_until_out(&self) -> Vec<(BoundedPos, Dir)> {
+    fn path_until_out(&self) -> Vec<(Pos, Dir)> {
         let mut covered_pos = Vec::new();
 
         let mut current_pos = self.guard_pos;
@@ -364,7 +274,7 @@ impl Puzzle {
     /// Returns `true` if loops.
     fn walk_detect_loop(
         &self,
-        start_pos: BoundedPos,
+        start_pos: Pos,
         start_dir: Dir,
         // history: &HashSet<(BoundedPos, Dir)>,
     ) -> bool {
@@ -464,7 +374,7 @@ impl Puzzle {
             if eliminated_loop_pos.contains(&pos) {
                 continue; // skip
             }
-            let before_pos = (pos + dir.opposite()).unwrap();
+            let before_pos = dir.opposite().apply_bounded(&pos, &self.bound).unwrap();
             *self.get_mut(pos) = MapTile::Obstacle;
             if self.walk_detect_loop(before_pos, dir) {
                 validated_loop_pos.insert(pos);
@@ -506,15 +416,7 @@ mod tests {
     #[test]
     fn hash_set_obs() {
         let mut set = HashSet::new();
-        let pos_dir1 = (
-            BoundedPos {
-                x: 0,
-                y: 1,
-                x_bound: 2,
-                y_bound: 2,
-            },
-            Dir::Up,
-        );
+        let pos_dir1 = (Pos { x: 0, y: 1 }, Dir::Up);
 
         set.insert(pos_dir1);
         assert!(set.contains(&pos_dir1));
