@@ -1,8 +1,6 @@
-use std::{
-    cmp::Ordering,
-    collections::{BTreeSet, HashMap},
-};
+use std::collections::{BTreeSet, HashMap};
 
+use advent_of_code::{Bound, DirVec, Pos};
 use itertools::Itertools;
 
 advent_of_code::solution!(8);
@@ -25,7 +23,7 @@ impl From<char> for Tile {
 struct Map {
     // map: Vec<Vec<Tile>>,
     antennas: HashMap<char, BTreeSet<Pos>>,
-    bounds: Bounds,
+    bounds: Bound,
 }
 
 impl From<&str> for Map {
@@ -59,9 +57,9 @@ impl Map {
                 _ => (),
             })
         });
-        let bounds = Bounds {
-            x: map[0].len(),
-            y: map.len(),
+        let bounds = Bound {
+            x_bound: map[0].len(),
+            y_bound: map.len(),
         };
         Self {
             // map,
@@ -146,95 +144,40 @@ impl Map {
     }
 }
 
-struct Bounds {
-    x: usize,
-    y: usize,
-}
-impl Bounds {
-    fn check(&self, pos: Pos) -> Option<Pos> {
-        if pos.x >= self.x || pos.y >= self.y {
-            None
-        } else {
-            Some(pos)
-        }
-    }
-}
+// struct Bounds {
+//     x: usize,
+//     y: usize,
+// }
+// impl Bounds {
+//     fn check(&self, pos: Pos) -> Option<Pos> {
+//         if pos.x >= self.x || pos.y >= self.y {
+//             None
+//         } else {
+//             Some(pos)
+//         }
+//     }
+// }
 
-#[derive(Clone, Copy)]
-struct DirVec {
-    dx: isize,
-    dy: isize,
-}
+// #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// struct Pos {
+//     x: usize,
+//     y: usize,
+// }
 
-impl DirVec {
-    fn new(a: Pos, b: Pos) -> Self {
-        let res = Self {
-            dx: b.x as isize - a.x as isize,
-            dy: b.y as isize - a.y as isize,
-        };
+// impl PartialOrd for Pos {
+//     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+//         match self.y.partial_cmp(&other.y) {
+//             Some(Ordering::Equal) => self.x.partial_cmp(&other.x),
+//             ord => ord,
+//         }
+//     }
+// }
 
-        // debug
-        assert_eq!(res.apply(a).unwrap(), b);
-        res
-    }
-
-    fn opposite(&self) -> Self {
-        Self {
-            dx: -self.dx,
-            dy: -self.dy,
-        }
-    }
-
-    /* wasn't needed */
-    // fn minimize(self) -> Self {
-    //     // ugly get divisors of dx and dy, then search commons:
-    //     let dx_divisors: Vec<isize> = (0..self.dx)
-    //         .filter(|&n| self.dx.rem_euclid(n) == 0)
-    //         .collect();
-
-    //     let dy_divisors = (0..self.dy).filter(|&n| self.dy.rem_euclid(n) == 0);
-
-    //     // find common divisors
-    //     let mut common_divisors: Vec<isize> =
-    //         dy_divisors.filter(|n| dx_divisors.contains(n)).collect();
-    //     common_divisors.sort();
-    //     match common_divisors.last() {
-    //         Some(&div) => Self {
-    //             dx: self.dx.div_euclid(div),
-    //             dy: self.dy.div_euclid(div),
-    //         },
-    //         None => self,
-    //     }
-    // }
-
-    fn apply(&self, pos: Pos) -> Option<Pos> {
-        Some(Pos {
-            x: pos.x.checked_add_signed(self.dx)?,
-            y: pos.y.checked_add_signed(self.dy)?,
-        })
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Pos {
-    x: usize,
-    y: usize,
-}
-
-impl PartialOrd for Pos {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self.y.partial_cmp(&other.y) {
-            Some(Ordering::Equal) => self.x.partial_cmp(&other.x),
-            ord => ord,
-        }
-    }
-}
-
-impl Ord for Pos {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
-    }
-}
+// impl Ord for Pos {
+//     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+//         self.partial_cmp(other).unwrap()
+//     }
+// }
 
 pub fn part_one(input: &str) -> Option<usize> {
     let map = Map::from(input);

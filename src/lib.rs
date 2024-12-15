@@ -75,6 +75,60 @@ impl Dir {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct DirVec {
+    dx: isize,
+    dy: isize,
+}
+
+impl DirVec {
+    pub fn new(a: Pos, b: Pos) -> Self {
+        let res = Self {
+            dx: b.x as isize - a.x as isize,
+            dy: b.y as isize - a.y as isize,
+        };
+
+        // debug
+        assert_eq!(res.apply(a).unwrap(), b);
+        res
+    }
+
+    pub fn opposite(&self) -> Self {
+        Self {
+            dx: -self.dx,
+            dy: -self.dy,
+        }
+    }
+
+    /* wasn't needed */
+    // fn minimize(self) -> Self {
+    //     // ugly get divisors of dx and dy, then search commons:
+    //     let dx_divisors: Vec<isize> = (0..self.dx)
+    //         .filter(|&n| self.dx.rem_euclid(n) == 0)
+    //         .collect();
+
+    //     let dy_divisors = (0..self.dy).filter(|&n| self.dy.rem_euclid(n) == 0);
+
+    //     // find common divisors
+    //     let mut common_divisors: Vec<isize> =
+    //         dy_divisors.filter(|n| dx_divisors.contains(n)).collect();
+    //     common_divisors.sort();
+    //     match common_divisors.last() {
+    //         Some(&div) => Self {
+    //             dx: self.dx.div_euclid(div),
+    //             dy: self.dy.div_euclid(div),
+    //         },
+    //         None => self,
+    //     }
+    // }
+
+    pub fn apply(&self, pos: Pos) -> Option<Pos> {
+        Some(Pos {
+            x: pos.x.checked_add_signed(self.dx)?,
+            y: pos.y.checked_add_signed(self.dy)?,
+        })
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Pos {
     pub x: usize,
@@ -102,6 +156,16 @@ pub struct Bound {
     pub x_bound: usize,
     // first y value to be invalid
     pub y_bound: usize,
+}
+
+impl Bound {
+    pub fn check(&self, pos: Pos) -> Option<Pos> {
+        if pos.x >= self.x_bound || pos.y >= self.y_bound {
+            None
+        } else {
+            Some(pos)
+        }
+    }
 }
 
 impl<T> From<&Vec<Vec<T>>> for Bound {
