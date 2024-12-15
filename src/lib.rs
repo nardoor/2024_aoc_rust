@@ -75,10 +75,10 @@ impl Dir {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct DirVec {
-    dx: isize,
-    dy: isize,
+    pub dx: isize,
+    pub dy: isize,
 }
 
 impl DirVec {
@@ -127,6 +127,21 @@ impl DirVec {
             x: pos.x.checked_add_signed(self.dx)?,
             y: pos.y.checked_add_signed(self.dy)?,
         })
+    }
+
+    pub fn multiply(&mut self, f: isize) {
+        self.dx *= f;
+        self.dy *= f;
+    }
+
+    pub fn apply_wrap_bounded(&self, pos: &Pos, bound: &Bound) -> Pos {
+        // dbg!(pos.x, self.dx, bound.x_bound);
+        // dbg!((pos.x as isize + self.dx) % bound.x_bound as isize);
+        // dbg!((pos.x as isize + self.dx).rem_euclid(bound.x_bound as isize));
+        // dbg!(((pos.x as isize + self.dx) % bound.x_bound as isize) as usize);
+        let x = ((pos.x as isize + self.dx).rem_euclid(bound.x_bound as isize)) as usize;
+        let y = ((pos.y as isize + self.dy).rem_euclid(bound.y_bound as isize)) as usize;
+        Pos { x, y }
     }
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
