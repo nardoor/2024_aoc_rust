@@ -24,6 +24,7 @@ test_lib = []
 # Template dependencies
 chrono = { version = "0.4.38", optional = true }
 dhat = { version = "0.3.3", optional = true }
+fraction = "0.15.3"
 itertools = "0.13.0"
 pest = "2.7.14"
 pest_derive = "2.7.14"
