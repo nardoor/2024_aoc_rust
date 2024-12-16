@@ -16,6 +16,14 @@ impl Dir {
     pub fn all() -> [Self; 4] {
         [Self::Up, Self::Right, Self::Down, Self::Left]
     }
+    pub fn rotate_left(self) -> Self {
+        match self {
+            Self::Up => Self::Left,
+            Self::Right => Self::Up,
+            Self::Down => Self::Right,
+            Self::Left => Self::Down,
+        }
+    }
     pub fn rotate_right(self) -> Self {
         match self {
             Self::Up => Self::Right,
