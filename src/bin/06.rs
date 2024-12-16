@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 use std::collections::HashSet;
 
 use advent_of_code::Bound;
+use advent_of_code::FromChar;
 use advent_of_code::{Dir, Pos};
 
 advent_of_code::solution!(6);
@@ -19,22 +20,6 @@ impl TryFrom<char> for MapTile {
             '#' => Ok(MapTile::Obstacle),
             '.' => Ok(MapTile::Empty),
             _ => Err(value),
-        }
-    }
-}
-
-trait FromChar {
-    fn from_char(c: char) -> Self;
-}
-
-impl FromChar for Dir {
-    fn from_char(c: char) -> Self {
-        match c {
-            '^' => Self::Up,
-            '>' => Self::Right,
-            'v' => Self::Down,
-            '<' => Self::Left,
-            _ => panic!(),
         }
     }
 }

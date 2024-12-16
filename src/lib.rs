@@ -75,6 +75,22 @@ impl Dir {
     }
 }
 
+pub trait FromChar {
+    fn from_char(c: char) -> Self;
+}
+
+impl FromChar for Dir {
+    fn from_char(c: char) -> Self {
+        match c {
+            '^' => Self::Up,
+            '>' => Self::Right,
+            'v' => Self::Down,
+            '<' => Self::Left,
+            other => panic!("unexpected '{other}'"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct DirVec {
     pub dx: isize,
