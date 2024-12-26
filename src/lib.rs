@@ -189,6 +189,17 @@ impl Ord for Pos {
     }
 }
 
+impl From<&str> for Pos {
+    /* assume X,Y */
+    fn from(value: &str) -> Self {
+        let (x, y) = value.split_once(",").unwrap();
+        Self {
+            x: x.parse().unwrap(),
+            y: y.parse().unwrap(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Bound {
     // first x value to be invalid
