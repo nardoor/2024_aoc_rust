@@ -81,6 +81,15 @@ impl Dir {
         }
         return Some(new_pos);
     }
+
+    pub fn to_char(&self) -> char {
+        match self {
+            Self::Up => '^',
+            Self::Right => '>',
+            Self::Down => 'v',
+            Self::Left => '<',
+        }
+    }
 }
 
 pub trait FromChar {
@@ -99,7 +108,7 @@ impl FromChar for Dir {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct DirVec {
     pub dx: isize,
     pub dy: isize,
@@ -167,7 +176,34 @@ impl DirVec {
         let y = ((pos.y as isize + self.dy).rem_euclid(bound.y_bound as isize)) as usize;
         Pos { x, y }
     }
+
+    pub fn x_dir(&self) -> Option<Dir> {
+        match self.dx.cmp(&0) {
+            Ordering::Equal => None,
+            Ordering::Greater => Some(Dir::Right),
+            Ordering::Less => Some(Dir::Left),
+        }
+    }
+
+    pub fn y_dir(&self) -> Option<Dir> {
+        match self.dy.cmp(&0) {
+            Ordering::Equal => None,
+            Ordering::Greater => Some(Dir::Down),
+            Ordering::Less => Some(Dir::Up),
+        }
+    }
 }
+
+// impl Add for DirVec {
+//     type Output = DirVec;
+//     fn add(self, rhs: Self) -> Self::Output {
+//         Self {
+//             dx: self.dx + rhs.dx,
+//             dy: self.dy + rhs.dy,
+//         }
+//     }
+// }
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Pos {
     pub x: usize,
